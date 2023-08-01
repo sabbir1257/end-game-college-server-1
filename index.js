@@ -1,51 +1,51 @@
-const express = require("express");
-const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
-require("dotenv").config();
-const app = express();
-const port = process.env.PORT || 5000;
+require("dotenv").config()
+const express = require("express")
+const port = process.env.PORT || 5000
+const app = express()
+const cors = require("cors")
+const morgan = require("morgan")
+app.use(cors())
+app.use(morgan("dev"))
+app.use(express.json())
 
-// middleware
-app.use(cors());
-app.use(express.json());
 
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.S3_BUCKET}:${process.env.SECRET_KEY}@cluster0.ihnyz1z.mongodb.net/?retryWrites=true&w=majority`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  },
+  }
 });
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
-    client.connect();
-
-    const homeCollegeCollection = client.db("endGameCollege").collection("homeCollege");
-    const collegeCollection = client.db("endGameCollege").collection("college");
+    const viewCollegeCollection = client.db("endGameCollege").collection("viewCollege");
     const myCollegeCollection = client.db("endGameCollege").collection("myCollege");
     const feedbackCollection = client.db("endGameCollege").collection("feedback");
 
 
+    // College data home page
     app.get("/homeCollege", async (req, res) => {
-      const homeCollege = await homeCollegeCollection.find().toArray()
+      const homeCollege = await viewCollegeCollection.find().limit(3).toArray()
       res.send(homeCollege)
     })
 
-
-    app.get("/college", async (req, res) => {
-      const college = await collegeCollection.find().toArray()
-      res.send(college)
+    // College data get 
+    app.get("/allCollege", async (req, res) => {
+      const allCollege = await viewCollegeCollection.find().toArray()
+      res.send(allCollege)
     })
+
 
     // View College Data get 
     app.get("/viewCollege/:id", async (req, res) => {
       const id = req.params.id
-      const viewCollege = await collegeCollection.findOne({ _id: new ObjectId(id) })
+      console.log(id);
+      const viewCollege = await viewCollegeCollection.findOne({ _id: new ObjectId(id) })
+      console.log(viewCollege);
       res.send(viewCollege)
     })
 
@@ -62,6 +62,7 @@ async function run() {
       res.send(result)
     })
 
+
     // Feedback get data 
     app.get("/feedback", async (req, res) => {
       const feedback = await feedbackCollection.find().limit(10).toArray()
@@ -75,12 +76,7 @@ async function run() {
       res.send(result)
     })
 
-
-    // Send a ping to confirm a successful connection
-    client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -89,10 +85,6 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("College is running");
-});
-
-app.listen(port, () => {
-  console.log(`College server is running port ${port}`);
-});
-
+  res.send("College is running")
+})
+app.listen(port)
